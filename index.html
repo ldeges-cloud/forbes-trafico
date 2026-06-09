@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forbes · Inteligencia de Tráfico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--red:#E8001C;--red-dark:#c40018;--bg:#0a0a0a;--card:#141414;--hover:#1a1a1a;--border:#1f1f1f;--text:#fff;--muted:#c0c0c0;--label:#888;--grid:rgba(255,255,255,.06)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Playfair Display',serif;line-height:1.12}
+  .label{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:2px;font-weight:600}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  a{color:inherit}
+
+  header{border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,10,.95);backdrop-filter:blur(8px);z-index:30}
+  .head-in{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:70px;flex-wrap:wrap;padding:10px 0}
+  .brand{display:flex;align-items:baseline;gap:16px}
+  .logo{font-family:'Playfair Display',serif;font-weight:900;font-size:29px;letter-spacing:-.5px;position:relative}
+  .logo sup{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:3px;font-weight:600;position:absolute;top:3px;right:-2px;transform:translateX(100%)}
+  .controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .ctl-label{color:var(--label);font-size:10px;margin-right:2px}
+  .rng{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:12px;font-weight:600;padding:7px 12px;border-radius:3px;cursor:pointer;transition:all .15s}
+  .rng:hover{border-color:var(--red-dark);color:var(--text)}
+  .rng.active{background:var(--red);border-color:var(--red);color:#fff}
+  .custom{display:flex;gap:5px;align-items:center;border-left:1px solid var(--border);padding-left:10px;margin-left:4px}
+  select{background:var(--hover);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:12px;padding:6px 8px;border-radius:3px;cursor:pointer}
+  .badge{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1.5px;font-size:10px;color:#9fe1cb;border:1px solid #2f5d4d;border-radius:3px;padding:3px 8px}
+  .badge.live::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#9fe1cb;margin-right:6px;vertical-align:middle}
+
+  .hero{padding:34px 0 10px}
+  .eyebrow{color:var(--red);font-size:12px;margin-bottom:13px}
+  .hero h1{font-size:34px;font-weight:900;max-width:880px}
+  .hero p{color:var(--muted);font-size:15.5px;margin-top:13px;max-width:780px}
+  .periodo{color:var(--label);font-size:12px;margin-top:10px}
+
+  .situacion{background:linear-gradient(90deg,rgba(232,0,28,.10),transparent 70%);border:1px solid var(--border);border-left:4px solid var(--red);border-radius:6px;padding:22px 26px;margin:24px 0 8px;display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+  .situacion .big{font-family:'Playfair Display',serif;font-weight:900;font-size:46px;line-height:1;color:var(--text);white-space:nowrap}
+  .situacion .big small{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--label);font-weight:600;margin-top:8px}
+  .situacion .txt{flex:1;min-width:280px}
+  .situacion .txt p{color:var(--muted);font-size:14.5px;line-height:1.65}
+  .situacion .txt strong{color:var(--text)}
+
+  .section-lab{color:var(--label);font-size:11px;margin:30px 0 14px;display:flex;align-items:center;gap:10px}
+  .section-lab::after{content:'';flex:1;height:1px;background:var(--border)}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:8px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:5px;padding:15px 15px 13px;cursor:pointer;transition:all .15s;position:relative}
+  .kpi:hover{background:var(--hover);border-left-color:#fff;transform:translateY(-2px)}
+  .kpi .info{position:absolute;top:10px;right:11px;width:15px;height:15px;border:1px solid var(--border);border-radius:50%;color:var(--label);font-size:10px;font-weight:700;text-align:center;line-height:14px;font-family:'Barlow'}
+  .kpi:hover .info{border-color:var(--label);color:var(--text)}
+  .kpi .k-lab{color:var(--label);font-size:10.5px;margin-bottom:8px;display:block;padding-right:16px}
+  .kpi .k-val{font-family:'Playfair Display',serif;font-weight:700;font-size:25px;line-height:1}
+  .kpi .k-sub{font-size:11.5px;margin-top:7px;color:var(--muted);line-height:1.35}
+  .down{color:#ff5a5a}.up{color:#9fe1cb}
+
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;margin-bottom:20px}
+  .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .panel h2{font-size:19px;font-weight:700}
+  .panel .p-sub{color:var(--muted);font-size:13px;margin-top:3px;max-width:680px}
+  .panel-tag{color:var(--red);font-size:10px;white-space:nowrap;margin-top:4px}
+  .insight{margin-top:13px;padding-top:13px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;line-height:1.6}
+  .insight strong{color:var(--text)}
+  .insight::before{content:'▸ ';color:var(--red)}
+  .chart-box{position:relative;height:330px;margin-top:14px}
+  .chart-sm{position:relative;height:250px;margin-top:12px}
+  .toggle-row{display:flex;gap:6px;margin-top:13px}
+  .tg{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:11px;font-weight:600;padding:6px 12px;border-radius:3px;cursor:pointer;transition:all .15s}
+  .tg.active{background:var(--hover);border-color:var(--red-dark);color:var(--text)}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+  .nota-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border)}
+  .nota-row:last-child{border-bottom:none}
+  .nota-rank{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--red);font-size:16px;min-width:26px;text-align:right}
+  .nota-tit{flex:1;font-size:13.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nota-tit a{text-decoration:none}.nota-tit a:hover{color:var(--red)}
+  .nota-pv{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;color:var(--muted);min-width:64px;text-align:right}
+  .nota-meta{color:var(--label);font-size:11px;min-width:120px;text-align:right}
+  @media(max-width:700px){.nota-meta{display:none}}
+
+  .reading{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--red);border-radius:6px;padding:24px 28px;margin-bottom:20px}
+  .reading .r-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .reading h2{font-size:20px;font-weight:700;margin-bottom:2px}
+  .reading .r-eyebrow{color:var(--red);font-size:11px;margin-bottom:4px;display:block}
+  .reading .r-note{color:var(--label);font-size:12px;margin:4px 0 16px;font-style:italic}
+  .reading p{color:var(--muted);font-size:14.5px;line-height:1.7;margin-bottom:13px}
+  .reading p strong{color:var(--text);font-weight:600}
+  .ia-btn{background:var(--red);border:none;color:#fff;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1.5px;font-size:12px;font-weight:700;padding:10px 18px;border-radius:4px;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .ia-btn:hover{background:var(--red-dark)}
+  .ia-btn:disabled{opacity:.5;cursor:wait}
+  .ia-tag{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1.5px;font-size:10px;padding:3px 8px;border-radius:3px;margin-left:8px}
+  .ia-tag.reglas{color:var(--label);border:1px solid var(--border)}
+  .ia-tag.ia{color:#cdb4ff;border:1px solid #4a3a7a}
+  .priorities{list-style:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px}
+  .priorities li{display:flex;gap:14px;padding:10px 0;align-items:flex-start}
+  .priorities .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--red);font-size:17px;min-width:24px}
+  .priorities .ptxt{color:var(--muted);font-size:14px;line-height:1.55}
+  .priorities .ptxt strong{color:var(--text);font-weight:600}
+
+  .ia-mini{background:transparent;border:1px solid #4a3a7a;color:#cdb4ff;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:10.5px;font-weight:600;padding:6px 11px;border-radius:3px;cursor:pointer;white-space:nowrap;align-self:flex-start;transition:all .15s}
+  .ia-mini:hover{background:rgba(205,180,255,.08);border-color:#cdb4ff}
+  .ia-mini:disabled{opacity:.5;cursor:wait}
+  .ia-panel-out{margin-top:12px;padding:14px 16px;background:rgba(205,180,255,.04);border:1px solid #2e2640;border-left:3px solid #6a4caf;border-radius:5px}
+  .ia-panel-out:empty{display:none}
+  .ia-panel-out p{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:8px}
+  .ia-panel-out p:last-child{margin-bottom:0}
+  .ia-panel-out p strong{color:#cdb4ff;font-weight:600}
+  .ia-loading{color:#cdb4ff;font-size:12.5px;font-style:italic}
+
+  .chat-fab{position:fixed;bottom:22px;right:22px;z-index:90;display:flex;align-items:center;gap:9px;background:var(--red);color:#fff;border:none;border-radius:30px;padding:13px 18px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1.5px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.45);transition:all .15s}
+  .chat-fab:hover{background:var(--red-dark)}
+  .chat-fab .dot{width:8px;height:8px;border-radius:50%;background:#9fe1cb;animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(159,225,203,.5)}70%{box-shadow:0 0 0 7px rgba(159,225,203,0)}100%{box-shadow:0 0 0 0 rgba(159,225,203,0)}}
+  .chat-fab.hidden{display:none}
+  .chat-dock{position:fixed;bottom:22px;right:22px;z-index:95;width:390px;max-width:calc(100vw - 28px);height:600px;max-height:calc(100vh - 44px);background:var(--card);border:1px solid var(--border);border-top:3px solid #6a4caf;border-radius:10px;display:none;flex-direction:column;box-shadow:0 14px 50px rgba(0,0,0,.6);overflow:hidden}
+  .chat-dock.open{display:flex}
+  .cd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .cd-head .cd-t{font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:#fff}
+  .cd-head .cd-s{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1.5px;font-size:9px;color:#cdb4ff;display:block;margin-top:1px}
+  .cd-head button{background:none;border:none;color:var(--label);font-size:20px;cursor:pointer;line-height:1;padding:2px 8px;border-radius:4px}
+  .cd-head button:hover{color:#fff;background:var(--hover)}
+  .chat-msgs{display:flex;flex-direction:column;gap:11px;flex:1;overflow-y:auto;padding:16px}
+  .chat-msg{display:flex}
+  .chat-msg.user{justify-content:flex-end}
+  .chat-msg .chat-bubble{max-width:84%;padding:10px 14px;border-radius:12px;font-size:13.5px;line-height:1.6}
+  .chat-msg.user .chat-bubble{background:rgba(232,0,28,.14);border:1px solid #4a1820;border-bottom-right-radius:3px;color:#fff}
+  .chat-msg.ia .chat-bubble{background:rgba(205,180,255,.05);border:1px solid #2e2640;border-bottom-left-radius:3px;color:var(--muted)}
+  .chat-bubble p{margin-bottom:8px}.chat-bubble p:last-child{margin-bottom:0}
+  .chat-bubble p strong{color:#cdb4ff;font-weight:600}
+  .chat-msg.user .chat-bubble p strong{color:#fff}
+  .chat-typing{font-style:italic;color:#cdb4ff}
+  .chat-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px;flex-shrink:0}
+  .chat-chip{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow',sans-serif;font-size:11.5px;padding:5px 10px;border-radius:14px;cursor:pointer;transition:all .15s}
+  .chat-chip:hover{border-color:#6a4caf;color:#cdb4ff}
+  .chat-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0}
+  .chat-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;padding:10px 13px;border-radius:5px;outline:none}
+  .chat-input:focus{border-color:#6a4caf}
+  .chat-input-row .ia-btn{padding:10px 14px}
+  @media(max-width:560px){.chat-dock{width:calc(100vw - 20px);height:calc(100vh - 80px);bottom:10px;right:10px}.chat-fab{bottom:14px;right:14px}}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--card);border:1px solid var(--border);border-top:4px solid var(--red);border-radius:8px;max-width:460px;width:100%;padding:28px 30px;position:relative}
+  .modal h3{font-size:23px;font-weight:700;margin-bottom:4px}
+  .modal .m-val{font-family:'Barlow Condensed',sans-serif;color:var(--red);font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-bottom:18px}
+  .modal .m-block{margin-bottom:16px}
+  .modal .m-block .m-h{color:var(--label);font-size:10.5px;margin-bottom:5px}
+  .modal .m-block p{color:var(--muted);font-size:14px;line-height:1.6}
+  .modal .m-close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--label);font-size:22px;cursor:pointer;line-height:1}
+  .modal .m-close:hover{color:#fff}
+
+  #statusBar{padding:40px 0;text-align:center;color:var(--muted);font-size:15px}
+  #statusBar .spin{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:sp .8s linear infinite;vertical-align:middle;margin-right:10px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #statusBar.err{color:#ff7a7a}
+
+  footer{border-top:1px solid var(--border);padding:24px 0;margin-top:8px}
+  footer p{color:var(--label);font-size:12px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1.5px}
+
+  @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}.hero h1{font-size:28px}.situacion .big{font-size:38px}}
+  @media(max-width:560px){.kpis{grid-template-columns:1fr}.wrap{padding:0 18px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-in">
+    <div class="brand">
+      <span class="logo">Forbes<sup>MÉXICO</sup></span>
+      <span class="label" style="letter-spacing:2px;font-size:11px;color:var(--muted)">Inteligencia de Tráfico</span>
+    </div>
+    <div class="controls">
+      <button class="rng" data-range="all">Todo</button>
+      <button class="rng" data-range="6m">6 m</button>
+      <button class="rng" data-range="3m">3 m</button>
+      <button class="rng" data-range="2026">2026</button>
+      <div class="custom">
+        <span class="ctl-label label" style="font-size:9px">Desde</span><select id="from"></select>
+        <span class="ctl-label label" style="font-size:9px">Hasta</span><select id="to"></select>
+      </div>
+      <span class="badge live">En vivo</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow label">Reporte ejecutivo · Audiencia digital</div>
+    <h1 id="heroTitle">Cargando…</h1>
+    <p id="heroSub"></p>
+    <div class="periodo" id="periodo"></div>
+  </section>
+
+  <div id="statusBar"><span class="spin"></span>Cargando datos reales…</div>
+
+  <div id="dashboard" style="display:none">
+    <section class="situacion">
+      <div class="big" id="sitBig">—<small id="sitBigLab">dato clave</small></div>
+      <div class="txt" id="sitTxt"></div>
+    </section>
+
+    <div class="section-lab label">Audiencia</div>
+    <section class="kpis" id="kpisAud"></section>
+
+    <div class="section-lab label">Adquisición · Google</div>
+    <section class="kpis" id="kpisAcq"></section>
+
+    <div class="section-lab label">Salud y vulnerabilidad</div>
+    <section class="kpis" id="kpisSalud"></section>
+
+    <div class="section-lab label">Análisis</div>
+    <section class="panel" data-iapanel="main">
+      <div class="panel-head">
+        <div><h2>Tráfico por canal</h2><div class="p-sub">Sesiones mensuales por canal de GA4. Las líneas rojas marcan actualizaciones de algoritmo de Google.</div></div>
+        <div class="panel-tag label" style="font-size:10px">Sesiones (miles)</div>
+      </div>
+      <div class="toggle-row">
+        <button class="tg active" data-view="canal">Por canal</button>
+        <button class="tg" data-view="google">Google: Discover vs búsqueda</button>
+      </div>
+      <div class="chart-box"><canvas id="mainChart"></canvas></div>
+      <div class="insight" id="insMain"></div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel" data-iapanel="disc">
+        <div class="panel-head"><div><h2>Discover vs búsqueda</h2><div class="p-sub">Clics de Google por superficie (Search Console).</div></div></div>
+        <div class="chart-sm"><canvas id="discChart"></canvas></div>
+        <div class="insight" id="insDisc"></div>
+      </div>
+      <div class="panel" data-iapanel="ctr">
+        <div class="panel-head"><div><h2>¿Ranking o IA?</h2><div class="p-sub">Impresiones vs clics: si las impresiones aguantan y los clics caen, la IA se queda con el clic.</div></div></div>
+        <div class="chart-sm"><canvas id="ctrChart"></canvas></div>
+        <div class="insight" id="insCtr"></div>
+      </div>
+    </section>
+
+    <section class="panel" data-iapanel="beh">
+      <div class="panel-head"><div><h2>Calidad de la sesión</h2><div class="p-sub">Tiempo medio de lectura y páginas por sesión (GA4).</div></div></div>
+      <div class="chart-sm" style="height:280px"><canvas id="behChart"></canvas></div>
+      <div class="insight" id="insBeh"></div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel" data-iapanel="dev">
+        <div class="panel-head"><div><h2>Dispositivos</h2><div class="p-sub">Sesiones por tipo de dispositivo (GA4).</div></div><div class="panel-tag label" style="font-size:10px">Miles</div></div>
+        <div class="chart-sm"><canvas id="devChart"></canvas></div>
+        <div class="insight" id="insDev"></div>
+      </div>
+      <div class="panel" data-iapanel="aud">
+        <div class="panel-head"><div><h2>Nuevos vs recurrentes</h2><div class="p-sub">La proporción que revela cuán dependiente sos del tráfico de paso.</div></div></div>
+        <div class="chart-sm"><canvas id="audChart"></canvas></div>
+        <div class="insight" id="insAud"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Notas con más tráfico</h2><div class="p-sub">Top de páginas por vistas, últimos 90 días (GA4).</div></div><div class="panel-tag label" style="font-size:10px">Últimos 90 días</div></div>
+      <div id="topNotasBox" style="margin-top:14px"></div>
+    </section>
+
+    <section class="reading">
+      <div class="r-top">
+        <div>
+          <span class="r-eyebrow label">Lectura del analista</span>
+          <h2 style="display:inline-block">Qué dicen los datos<span class="ia-tag reglas" id="iaTag">Reglas</span></h2>
+        </div>
+        <button class="ia-btn" id="iaBtn" onclick="pedirIA()">✦ Profundizar con IA</button>
+      </div>
+      <p class="r-note">Se recalcula según el período seleccionado. Apretá el botón para un análisis redactado por IA.</p>
+      <div id="readingBody"></div>
+      <ul class="priorities" id="priorities"></ul>
+    </section>
+  </div>
+</main>
+
+<button class="chat-fab hidden" id="chatFab" onclick="toggleChat(true)"><span class="dot"></span>Preguntar al analista</button>
+<div class="chat-dock" id="chatDock">
+  <div class="cd-head">
+    <div><span class="cd-t">Analista IA</span><span class="cd-s">GPT-4o · recuerda el hilo</span></div>
+    <button onclick="toggleChat(false)" aria-label="Cerrar chat" title="Minimizar">&minus;</button>
+  </div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chat-chips" id="chatChips"></div>
+  <div class="chat-input-row">
+    <input id="chatInput" class="chat-input" type="text" placeholder="Escribí tu pregunta…" autocomplete="off">
+    <button class="ia-btn" id="chatSend">Enviar</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)cerrarModal()">
+  <div class="modal">
+    <button class="m-close" onclick="cerrarModal()">&times;</button>
+    <h3 id="mTit"></h3>
+    <div class="m-val" id="mVal"></div>
+    <div class="m-block"><div class="m-h label">Qué es</div><p id="mQue"></p></div>
+    <div class="m-block"><div class="m-h label">Cómo se calcula</div><p id="mCalc"></p></div>
+    <div class="m-block"><div class="m-h label">Por qué importa para Forbes</div><p id="mPor"></p></div>
+  </div>
+</div>
+
+<footer><div class="wrap"><p id="footNote">Forbes Latinoamérica · Inteligencia de Tráfico · GA4 + Search Console en vivo</p></div></footer>
+
+<script>
+const API='https://forbesmexico.app.n8n.cloud/webhook/forbes-trafico-datos';
+const IA_API='https://forbesmexico.app.n8n.cloud/webhook/forbes-analisis-ia';
+const KEY='frbs-traf-2026-x7k9q2';
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const UPDATES=[{ym:'202512',label:'Core update'},{ym:'202602',label:'Discover update'},{ym:'202603',label:'Core + spam'},{ym:'202605',label:'Core update'}];
+const C={red:'#E8001C',white:'#fff',gris:'#9a9a9a',gris2:'#5a5a5a',gris3:'#333',muted:'#c0c0c0',label:'#888',grid:'rgba(255,255,255,.06)'};
+Chart.defaults.font.family="'Barlow', sans-serif";Chart.defaults.color=C.label;
+
+function ymLabel(ym){var s=String(ym);return MESES[parseInt(s.slice(4,6),10)-1]+' '+s.slice(2,4);}
+
+let DATA={},SEG={},TOP=[],M=[],YM=[];
+let state={s:0,e:0,view:'canal'};
+const QUICK={};
+
+const slice=a=>a.slice(state.s,state.e);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const fmt=n=>n>=1000?(n/1000).toFixed(2)+' M':Math.round(n)+' k';
+const fmtT=sec=>{const m=Math.floor(sec/60),s=Math.round(sec%60);return m+':'+(s<10?'0':'')+s;};
+const wavg=(arr,w)=>{const d=sum(w);return d?sum(arr.map((v,i)=>v*w[i]))/d:0;};
+function pct(now,prev){return prev?((now-prev)/prev*100):0;}
+const sgn=v=>(v>=0?'+':'')+v.toFixed(1);
+
+function buildArrays(rows,segmentos,topNotas){
+  rows=rows.filter(r=>Number(r.sesiones)>0).sort((a,b)=>String(a.yearMonth).localeCompare(String(b.yearMonth)));
+  YM=rows.map(r=>String(r.yearMonth));
+  M=YM.map(ymLabel);
+  const k=f=>rows.map(r=>Number(r[f])/1000);
+  DATA={
+    total:k('sesiones'),usuarios:k('usuarios'),pageviews:k('pageviews'),
+    directo:k('directo'),organico:k('organico'),social:k('social'),referido:k('referido'),otros:k('otros'),
+    discover:k('discoverClics'),webClics:k('gscClics'),
+    impresiones:k('gscImpresiones'),clics:k('gscClics'),
+    avgTime:rows.map(r=>Number(r.tiempoMedioSeg)),
+    pps:rows.map(r=>Number(r.sesiones)?Number(r.pageviews)/Number(r.sesiones):0),
+    ctr:rows.map(r=>Number(r.ctrBusqueda))
+  };
+  const segMap={};(segmentos||[]).forEach(s=>{segMap[String(s.yearMonth)]=s;});
+  const sv=f=>YM.map(y=>{const s=segMap[y];return s?Number(s[f])/1000:0;});
+  SEG={movil:sv('movil'),escritorio:sv('escritorio'),tablet:sv('tablet'),nuevos:sv('nuevos'),recurrentes:sv('recurrentes')};
+  TOP=(topNotas||[]).slice();
+  const n=M.length;
+  QUICK.all=[0,n];QUICK['6m']=[Math.max(0,n-6),n];QUICK['3m']=[Math.max(0,n-3),n];
+  let i=YM.findIndex(y=>y.slice(0,4)==='2026');QUICK['2026']=[i>=0?i:0,n];
+  state.s=0;state.e=n;
+}
+
+const updatePlugin={id:'updates',afterDatasetsDraw(c){
+  if(!c.$ev)return;const ctx=c.ctx,top=c.chartArea.top,bottom=c.chartArea.bottom,x=c.scales.x;ctx.save();
+  c.$ev.forEach(e=>{const i=c.$labels.indexOf(e.label2);if(i<0)return;const xp=x.getPixelForValue(i);
+    ctx.beginPath();ctx.setLineDash([4,4]);ctx.moveTo(xp,top);ctx.lineTo(xp,bottom);
+    ctx.strokeStyle='rgba(232,0,28,.55)';ctx.lineWidth=1;ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#E8001C';ctx.font="700 9px 'Barlow Condensed'";ctx.textAlign='left';
+    ctx.fillText(e.label.toUpperCase(),xp+5,top+11);});ctx.restore();}};
+function ev(){return UPDATES.map(u=>({label:u.label,label2:ymLabel(u.ym)}));}
+
+const legend={position:'bottom',labels:{usePointStyle:true,pointStyle:'rectRounded',boxWidth:9,boxHeight:9,padding:14,font:{size:12},color:C.muted}};
+const baseAxes=(stacked,maxY)=>({x:{stacked,grid:{color:C.grid},ticks:{font:{size:11}}},y:{stacked,grid:{color:C.grid},max:maxY,ticks:{font:{size:11},callback:v=>v>=1000?(v/1000)+'M':v+'k'}}});
+
+let charts={};
+function mk(id,cfg){if(charts[id]){charts[id].data=cfg.data;charts[id].options=cfg.options;charts[id].$ev=cfg.$ev;charts[id].$labels=cfg.data.labels;charts[id].update();}else{charts[id]=new Chart(document.getElementById(id),cfg);charts[id].$ev=cfg.$ev;charts[id].$labels=cfg.data.labels;}}
+
+function buildMain(){
+  const labels=slice(M);let ds;
+  if(state.view==='canal')ds=[
+    {label:'Directo',data:slice(DATA.directo),backgroundColor:C.red},
+    {label:'Orgánico',data:slice(DATA.organico),backgroundColor:C.white},
+    {label:'Social',data:slice(DATA.social),backgroundColor:C.gris},
+    {label:'Referido',data:slice(DATA.referido),backgroundColor:C.gris2},
+    {label:'Otros',data:slice(DATA.otros),backgroundColor:C.gris3}];
+  else ds=[
+    {label:'Discover (clics)',data:slice(DATA.discover),backgroundColor:C.white},
+    {label:'Búsqueda (clics)',data:slice(DATA.webClics),backgroundColor:C.red}];
+  mk('mainChart',{type:'bar',data:{labels,datasets:ds},$ev:ev(),options:{responsive:true,maintainAspectRatio:false,plugins:{legend,tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.round(c.parsed.y)+' k'}}},scales:baseAxes(true)},plugins:[updatePlugin]});
+}
+function buildDisc(){const labels=slice(M);mk('discChart',{type:'line',data:{labels,datasets:[
+  {label:'Discover',data:slice(DATA.discover),borderColor:C.white,backgroundColor:'rgba(255,255,255,.08)',fill:true,tension:.3,borderWidth:2,pointRadius:2},
+  {label:'Búsqueda web',data:slice(DATA.webClics),borderColor:C.red,backgroundColor:'rgba(232,0,28,.08)',fill:true,tension:.3,borderWidth:2,pointRadius:2}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend},scales:baseAxes(false)}});}
+function buildCtr(){const labels=slice(M);mk('ctrChart',{type:'line',data:{labels,datasets:[
+  {label:'Impresiones (M)',data:slice(DATA.impresiones).map(v=>+(v/1000).toFixed(1)),borderColor:C.gris,tension:.3,borderWidth:2,pointRadius:2,yAxisID:'y'},
+  {label:'Clics (k)',data:slice(DATA.clics).map(v=>Math.round(v)),borderColor:C.red,tension:.3,borderWidth:2.5,pointRadius:2,yAxisID:'y1'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend},scales:{x:{grid:{color:C.grid},ticks:{font:{size:11}}},y:{position:'left',grid:{color:C.grid},ticks:{font:{size:11}},title:{display:true,text:'Impresiones (M)',color:C.label,font:{size:10}}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:11}},title:{display:true,text:'Clics (k)',color:C.label,font:{size:10}}}}}});}
+function buildBeh(){const labels=slice(M);mk('behChart',{type:'line',data:{labels,datasets:[
+  {label:'Tiempo medio (seg)',data:slice(DATA.avgTime),borderColor:C.white,tension:.3,borderWidth:2,pointRadius:2,yAxisID:'y'},
+  {label:'Páginas / sesión',data:slice(DATA.pps).map(v=>+v.toFixed(2)),borderColor:C.red,tension:.3,borderWidth:2.5,pointRadius:2,yAxisID:'y1'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend},scales:{x:{grid:{color:C.grid},ticks:{font:{size:11}}},y:{position:'left',grid:{color:C.grid},ticks:{font:{size:11}},title:{display:true,text:'Segundos',color:C.label,font:{size:10}}},y1:{position:'right',min:1,grid:{drawOnChartArea:false},ticks:{font:{size:11}},title:{display:true,text:'Págs/sesión',color:C.label,font:{size:10}}}}}});}
+function buildDev(){const labels=slice(M);mk('devChart',{type:'bar',data:{labels,datasets:[
+  {label:'Móvil',data:slice(SEG.movil),backgroundColor:C.red},
+  {label:'Escritorio',data:slice(SEG.escritorio),backgroundColor:C.white},
+  {label:'Tablet',data:slice(SEG.tablet),backgroundColor:C.gris}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend,tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.round(c.parsed.y)+' k'}}},scales:baseAxes(true)}});}
+function buildAud(){const labels=slice(M);mk('audChart',{type:'bar',data:{labels,datasets:[
+  {label:'Nuevos',data:slice(SEG.nuevos),backgroundColor:C.gris2},
+  {label:'Recurrentes',data:slice(SEG.recurrentes),backgroundColor:C.red}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend,tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.round(c.parsed.y)+' k'}}},scales:baseAxes(true)}});}
+
+function renderTop(){
+  const box=document.getElementById('topNotasBox');
+  if(!TOP.length){box.innerHTML='<div class="nota-meta" style="text-align:left">Sin datos de notas en este período.</div>';return;}
+  box.innerHTML=TOP.slice(0,15).map((n,i)=>{
+    const pv=Number(n.pageviews)||0,t=Number(n.tiempoMedioSeg)||0;
+    var tit=String(n.titulo||n.path||'').replace(/ • Forbes México$/,'');
+    const url='https://www.forbes.com.mx'+(n.path||'');
+    return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a></span><span class="nota-pv">'+fmt(pv/1000)+'</span><span class="nota-meta">'+fmtT(t)+' · '+(Number(n.sesiones)||0).toLocaleString('es')+' ses.</span></div>';
+  }).join('');
+}
+
+function metricas(){
+  const ses=slice(DATA.total),usr=slice(DATA.usuarios),pv=slice(DATA.pageviews);
+  const disc=slice(DATA.discover),web=slice(DATA.webClics),imp=slice(DATA.impresiones),cl=slice(DATA.clics),ctr=slice(DATA.ctr);
+  const mov=slice(SEG.movil),esc=slice(SEG.escritorio),tab=slice(SEG.tablet),nv=slice(SEG.nuevos),rec=slice(SEG.recurrentes);
+  const L=ses.length-1;
+  const peak=Math.max.apply(null,ses);
+  const totDisp=(mov[L]||0)+(esc[L]||0)+(tab[L]||0);
+  const totRec=(nv[L]||0)+(rec[L]||0);
+  const totGoogle=(disc[L]||0)+(web[L]||0);
+  return {
+    L,per:M[state.s]+' – '+M[state.e-1],
+    sesTot:sum(ses),usrTot:sum(usr),pvTot:sum(pv),
+    sesTrend:pct(ses[L],L>0?ses[L-1]:ses[L]),
+    fromPeak:pct(ses[L],peak),peak,
+    ppsW:sum(pv)/(sum(ses)||1),timeW:wavg(slice(DATA.avgTime),ses),
+    discDrop:pct(disc[L],disc[0]),discShare:totGoogle?disc[L]/totGoogle*100:0,
+    ctrNow:ctr[L],ctrDelta:ctr[L]-ctr[0],
+    clDrop:pct(cl[L],cl[0]),impDrop:pct(imp[L],imp[0]),
+    clLast:cl[L],impLast:imp[L],discLast:disc[L],
+    recRate:totRec?rec[L]/totRec*100:0,nuevosShare:totRec?nv[L]/totRec*100:0,
+    movShare:totDisp?mov[L]/totDisp*100:0,
+    ppu:usr[L]?pv[L]/usr[L]:0,dirDrop:pct(slice(DATA.directo)[L],slice(DATA.directo)[0])
+  };
+}
+
+const KPIMETA={};
+function card(id,lab,val,sub,vcls){return '<div class="kpi" onclick="abrirModal(\''+id+'\')"><span class="info">i</span><span class="k-lab label">'+lab+'</span><div class="k-val '+(vcls||'')+'">'+val+'</div><div class="k-sub">'+sub+'</div></div>';}
+function meta(id,nombre,val,que,calc,por){KPIMETA[id]={nombre,val,que,calc,por};}
+
+function renderKpis(){
+  const m=metricas();
+  document.getElementById('kpisAud').innerHTML=[
+    card('sesiones','Sesiones',fmt(m.sesTot),'<span class="'+(m.sesTrend<0?'down':'up')+'">'+sgn(m.sesTrend)+'%</span> últ. mes vs anterior'),
+    card('usuarios','Usuarios',fmt(m.usrTot),(m.usrTot/(m.sesTot||1)).toFixed(2)+' sesiones por usuario'),
+    card('pageviews','Pageviews',fmt(m.pvTot),'Vistas de página totales'),
+    card('pps','Páginas / sesión',m.ppsW.toFixed(2),'Profundidad de navegación'),
+    card('tiempo','Tiempo medio',fmtT(m.timeW),'Lectura por sesión')
+  ].join('');
+  meta('sesiones','Sesiones',fmt(m.sesTot),'Cada visita a Forbes. Una misma persona puede generar varias sesiones distintas.','Suma de sesiones de GA4 en el período. La variación compara el último mes contra el anterior.','Es el termómetro general del negocio: de cuánta gente entra depende todo lo demás, incluido lo comercial.');
+  meta('usuarios','Usuarios',fmt(m.usrTot),'Personas únicas que visitaron el sitio, sin importar cuántas veces.','Suma de usuarios de GA4. El subtítulo divide sesiones entre usuarios.','Sesiones por usuario cercano a 1 significa que casi nadie vuelve: audiencia de paso, no fidelizada.');
+  meta('pageviews','Pageviews',fmt(m.pvTot),'Total de páginas vistas en el período.','Suma de vistas de página (screenPageViews) de GA4.','Es el inventario publicitario: cada pageview es una oportunidad de aviso. Si caen, cae la facturación.');
+  meta('pps','Páginas por sesión',m.ppsW.toFixed(2),'Cuántas páginas ve la gente, en promedio, cada vez que entra.','Pageviews del período dividido por sesiones del período.','Mide si la audiencia explora o rebota. Más páginas por sesión = más avisos servidos y mejor enganche editorial.');
+  meta('tiempo','Tiempo medio',fmtT(m.timeW),'Duración promedio de una sesión, en minutos:segundos.','Promedio de duración de GA4, ponderado por las sesiones de cada mes.','Tiempo alto sugiere lectura real (no clic-y-fuga). Es señal de calidad que Google premia y que valida al anunciante.');
+
+  document.getElementById('kpisAcq').innerHTML=[
+    card('clics','Clics de búsqueda',fmt(m.clLast),'<span class="'+(m.clDrop<0?'down':'up')+'">'+sgn(m.clDrop)+'%</span> en el período'),
+    card('impresiones','Impresiones',(m.impLast/1000).toFixed(1)+' M','<span class="'+(m.impDrop<0?'down':'up')+'">'+sgn(m.impDrop)+'%</span> · visibilidad en Google'),
+    card('ctr','CTR de búsqueda',m.ctrNow.toFixed(2)+'%','<span class="'+(m.ctrDelta<0?'down':'up')+'">'+(m.ctrDelta>=0?'+':'')+m.ctrDelta.toFixed(2)+' pts</span> · señal de IA'),
+    card('discClics','Clics de Discover',fmt(m.discLast),'El feed de Google, la fuente más volátil'),
+    card('discShare','Discover % de Google',m.discShare.toFixed(0)+'%','del total de clics que llegan de Google')
+  ].join('');
+  meta('clics','Clics de búsqueda',fmt(m.clLast),'Veces que alguien hizo clic en un resultado de Forbes en la búsqueda de Google.','Clics de Search Console (superficie web) del último mes; la variación compara contra el inicio del período.','Es el tráfico de búsqueda puro. Su caída, con impresiones estables, es la huella de la IA de Google respondiendo sin enviar el clic.');
+  meta('impresiones','Impresiones',(m.impLast/1000).toFixed(1)+' M','Veces que un resultado de Forbes apareció en Google, haya tenido clic o no.','Impresiones de Search Console (web) del último mes.','Mide visibilidad y ranking. Si las impresiones aguantan pero los clics caen, no perdiste posiciones: perdiste el clic ante la IA.');
+  meta('ctr','CTR de búsqueda',m.ctrNow.toFixed(2)+'%','Porcentaje de impresiones que terminan en clic.','Clics dividido impresiones, por cien. La variación es en puntos porcentuales contra el inicio del período.','Es el indicador más directo del impacto de las respuestas con IA: un CTR que se hunde con buen ranking es la alarma.');
+  meta('discClics','Clics de Discover',fmt(m.discLast),'Clics que llegan desde el feed de Discover (el muro de tarjetas del celular).','Clics de Search Console, superficie Discover, del último mes.','Era el principal motor de Forbes y el más castigado por los updates. Es grande pero impredecible: Google decide a quién mostrar.');
+  meta('discShare','Discover % de Google',m.discShare.toFixed(0)+'%','Qué parte del tráfico de Google viene de Discover y no de la búsqueda.','Clics de Discover dividido por (clics de Discover + clics de búsqueda) del último mes.','Cuanto más alto, más expuesto estás a un solo algoritmo volátil. Diversificar fuera de Discover reduce ese riesgo.');
+
+  document.getElementById('kpisSalud').innerHTML=[
+    card('fromPeak','Desde el pico',m.fromPeak.toFixed(0)+'%','Pico del período: '+fmt(m.peak),m.fromPeak<0?'down':'up'),
+    card('recRate','Tasa de recurrencia',m.recRate.toFixed(0)+'%','de las sesiones son de gente que vuelve',m.recRate<20?'down':''),
+    card('nuevos','Tráfico nuevo',m.nuevosShare.toFixed(0)+'%','audiencia de paso (primera visita)',m.nuevosShare>80?'down':''),
+    card('movil','Peso del móvil',m.movShare.toFixed(0)+'%','de las sesiones son desde el celular'),
+    card('ppu','Páginas por usuario',m.ppu.toFixed(2),'profundidad por persona única')
+  ].join('');
+  meta('fromPeak','Desde el pico',m.fromPeak.toFixed(0)+'%','Cuánto está el último mes por debajo del mejor mes del período.','(Sesiones del último mes menos el pico) dividido por el pico, por cien.','Cuantifica de un vistazo la magnitud de la caída. Es el número que un director quiere ver primero.');
+  meta('recRate','Tasa de recurrencia',m.recRate.toFixed(0)+'%','Qué parte de las sesiones son de personas que ya habían venido antes.','Sesiones de usuarios recurrentes dividido por el total de sesiones, por cien (último mes).','Es la métrica de resiliencia: lectores que vuelven solos no dependen de Google. Una tasa baja es la mayor vulnerabilidad estructural de Forbes.');
+  meta('nuevos','Tráfico nuevo',m.nuevosShare.toFixed(0)+'%','Qué parte de las sesiones son de gente que entra por primera vez.','Sesiones de usuarios nuevos dividido por el total, por cien (último mes).','Un valor muy alto suena bien pero es frágil: si casi todo es nuevo, cuando Google cierra la canilla no hay colchón de audiencia propia.');
+  meta('movil','Peso del móvil',m.movShare.toFixed(0)+'%','Porcentaje de sesiones que ocurren en el celular.','Sesiones móvil dividido por (móvil + escritorio + tablet), por cien (último mes).','Define prioridades de producto: si el móvil manda, la velocidad de carga y el formato de Discover (mobile) son críticos.');
+  meta('ppu','Páginas por usuario',m.ppu.toFixed(2),'Cuántas páginas ve cada persona única en el período.','Pageviews dividido por usuarios (último mes).','Complementa páginas por sesión: mide el valor total que extraés de cada persona, clave para la rentabilidad por lector.');
+}
+
+function abrirModal(id){const k=KPIMETA[id];if(!k)return;
+  document.getElementById('mTit').textContent=k.nombre;
+  document.getElementById('mVal').textContent=k.val;
+  document.getElementById('mQue').textContent=k.que;
+  document.getElementById('mCalc').textContent=k.calc;
+  document.getElementById('mPor').textContent=k.por;
+  document.getElementById('modalBg').classList.add('show');}
+function cerrarModal(){document.getElementById('modalBg').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarModal();});
+
+function detectarHistoria(m){
+  const cand=[];
+  if(m.discDrop<-20)cand.push({sev:Math.abs(m.discDrop)+30,tipo:'discover'});
+  if(m.recRate<18)cand.push({sev:(18-m.recRate)*3+25,tipo:'recurrencia'});
+  if(m.ctrDelta<-0.15&&m.impDrop>-15)cand.push({sev:Math.abs(m.ctrDelta)*40+20,tipo:'ia'});
+  if(m.fromPeak<-25)cand.push({sev:Math.abs(m.fromPeak),tipo:'caida'});
+  cand.sort((a,b)=>b.sev-a.sev);
+  return cand.length?cand[0].tipo:'estable';
+}
+function renderHistoria(){
+  const m=metricas();const t=detectarHistoria(m);
+  document.getElementById('periodo').textContent='Período analizado: '+m.per+'  ·  '+(state.e-state.s)+' meses';
+  let title,sub,bigVal,bigLab,sitHtml;
+  if(t==='discover'){
+    title='El tráfico cae, pero no por igual: el motor que se apagó es Discover.';
+    sub='Discover era la principal fuente de Google y la que más se desplomó. La búsqueda cae más ordenada. La caída coincide con los updates de algoritmo de Google.';
+    bigVal=m.discDrop.toFixed(0)+'%';bigLab='Caída de Discover';
+    sitHtml='<p><strong>Discover se desplomó '+m.discDrop.toFixed(0)+'%</strong> en el período y hoy representa el '+m.discShare.toFixed(0)+'% de los clics que llegan de Google. Es, a la vez, la mayor fuente y la más volátil: Google decide a quién mostrar en el feed, y los últimos core updates reordenaron ese reparto en contra del contenido no original.</p>';
+  }else if(t==='recurrencia'){
+    title='El problema no es solo cuánta gente entra, sino que casi nadie vuelve.';
+    sub='La audiencia es mayormente de paso: llega por Google y no regresa. Eso deja a Forbes sin colchón cuando el algoritmo cambia.';
+    bigVal=m.recRate.toFixed(0)+'%';bigLab='Tasa de recurrencia';
+    sitHtml='<p>Solo el <strong>'+m.recRate.toFixed(0)+'% de las sesiones</strong> son de lectores que vuelven; el '+m.nuevosShare.toFixed(0)+'% es audiencia nueva. Es tráfico prestado por Google: rinde mientras la canilla está abierta, pero no construye base propia. La recurrencia es hoy la mayor vulnerabilidad estructural.</p>';
+  }else if(t==='ia'){
+    title='No perdiste ranking: perdiste el clic. La IA de Google se quedó en el medio.';
+    sub='Las impresiones se mantienen pero los clics caen. Es la huella de las respuestas con IA resolviendo la consulta sin mandar al usuario al sitio.';
+    bigVal=m.ctrNow.toFixed(2)+'%';bigLab='CTR de búsqueda';
+    sitHtml='<p>Las impresiones se movieron '+sgn(m.impDrop)+'% pero los clics cayeron <strong>'+sgn(m.clDrop)+'%</strong>, con el CTR en '+m.ctrNow.toFixed(2)+'%. Seguís apareciendo en Google, pero el usuario ya no necesita entrar: la respuesta con IA le alcanza. El desafío es producir lo que la IA no puede resolver sola.</p>';
+  }else if(t==='caida'){
+    title='Caída generalizada de tráfico en el período seleccionado.';
+    sub='El descenso afecta a varias fuentes a la vez. Conviene revisar tanto el contenido como la medición.';
+    bigVal=m.fromPeak.toFixed(0)+'%';bigLab='Desde el pico';
+    sitHtml='<p>El último mes está <strong>'+m.fromPeak.toFixed(0)+'%</strong> por debajo del pico del período ('+fmt(m.peak)+'). La caída no se explica por un solo canal; si el tráfico directo también baja, parte del descenso puede ser un problema de medición y no solo de audiencia.</p>';
+  }else{
+    title='El tráfico se mantiene estable en el período seleccionado.';
+    sub='No hay una caída dominante en esta ventana. Buen momento para consolidar audiencia propia.';
+    bigVal=fmt(m.sesTot);bigLab='Sesiones del período';
+    sitHtml='<p>En <strong>'+m.per+'</strong> el tráfico se mantuvo relativamente estable, con '+fmt(m.sesTot)+' sesiones. Sin una caída urgente que apagar, es el momento de invertir en recurrencia (newsletter, suscripción) para reducir la dependencia de Google.</p>';
+  }
+  document.getElementById('heroTitle').textContent=title;
+  document.getElementById('heroSub').textContent=sub;
+  document.getElementById('sitBig').innerHTML=bigVal+'<small>'+bigLab+'</small>';
+  document.getElementById('sitTxt').innerHTML=sitHtml;
+}
+
+function renderInsights(){
+  const m=metricas();
+  document.getElementById('insMain').innerHTML='El canal más grande sigue siendo el <strong>directo</strong>, pero ojo: cuando el directo cae junto con todo lo demás, suele esconder un problema de medición. El orgánico es la base estable.';
+  document.getElementById('insDisc').innerHTML='Discover y búsqueda son <strong>la misma unidad</strong> (clics de Google), así que se comparan de igual a igual. Discover es más grande pero más errático.';
+  document.getElementById('insCtr').innerHTML='Impresiones '+sgn(m.impDrop)+'% vs clics <strong>'+sgn(m.clDrop)+'%</strong>: '+(m.impDrop>-12&&m.clDrop<-20?'la brecha confirma que el problema es la IA quedándose con el clic, no el ranking.':'se mueven parejos, sin una señal fuerte de pérdida de clic por IA en este período.');
+  document.getElementById('insBeh').innerHTML='Sesión promedio de <strong>'+fmtT(m.timeW)+'</strong> con '+m.ppsW.toFixed(2)+' páginas. '+(m.timeW<120?'Tiempos cortos sugieren mucho tráfico de Discover de una sola nota.':'Lectura saludable para un medio de noticias.');
+  document.getElementById('insDev').innerHTML='El <strong>'+m.movShare.toFixed(0)+'% es móvil</strong>: Forbes es mobile-first. La experiencia de lectura en celular y el formato Discover (que es mobile) son prioridad absoluta.';
+  document.getElementById('insAud').innerHTML='Apenas el <strong>'+m.recRate.toFixed(0)+'% vuelve</strong>. Convertir parte de esa audiencia de paso en recurrente (newsletter, registro) es la palanca de mayor impacto a mediano plazo.';
+}
+
+function renderReadingReglas(){
+  document.getElementById('iaTag').textContent='Reglas';
+  document.getElementById('iaTag').className='ia-tag reglas';
+  const m=metricas();
+  let p1='En el período <strong>'+m.per+'</strong>, el tráfico total fue de <strong>'+fmt(m.sesTot)+'</strong>. '+(m.fromPeak<-15?'El último mes está <strong>'+m.fromPeak.toFixed(0)+'%</strong> por debajo del pico.':'La curva se mantiene relativamente estable.');
+  let p2=m.discDrop<-15?'<strong>Discover se desplomó '+m.discDrop.toFixed(0)+'%</strong> y hoy es el '+m.discShare.toFixed(0)+'% de los clics de Google: la mayor fuente y la que más sangra.':'Discover es el '+m.discShare.toFixed(0)+'% de los clics de Google y se mantiene relativamente estable.';
+  let p3=(m.impDrop>-12&&m.clDrop<-20)?'En búsqueda, las impresiones bajaron solo '+m.impDrop.toFixed(0)+'% pero los clics cayeron <strong>'+m.clDrop.toFixed(0)+'%</strong> (CTR '+m.ctrDelta.toFixed(2)+' pts): la IA de Google se queda con el clic.':'En búsqueda, impresiones y clics se movieron parejos (CTR '+(m.ctrDelta>=0?'+':'')+m.ctrDelta.toFixed(2)+' pts).';
+  let p4='Solo el <strong>'+m.recRate.toFixed(0)+'%</strong> de las sesiones son recurrentes y el '+m.movShare.toFixed(0)+'% es móvil. La sesión dura '+fmtT(m.timeW)+'.'+(m.dirDrop<-12?' El directo cae '+m.dirDrop.toFixed(0)+'%: conviene revisar la medición.':'');
+  document.getElementById('readingBody').innerHTML='<p>'+p1+'</p><p>'+p2+'</p><p>'+p3+'</p><p>'+p4+'</p>';
+  const pr=[];
+  if(m.dirDrop<-12)pr.push(['Revisar la medición.','Validar el tag de GA4 y el modo consentimiento; parte de la caída del directo puede ser subreporte.']);
+  if(m.discDrop<-15)pr.push(['Recuperar Discover.','Reporte original, titulares honestos y schema NewsArticle para volver a ser elegible en el feed.']);
+  if(m.clDrop<-20)pr.push(['Defender el clic en búsqueda.','Contenido que la IA no resuelve sola: análisis, datos propios, exclusivas.']);
+  if(m.recRate<20)pr.push(['Construir audiencia propia.','Newsletter y registro para convertir tráfico de paso en lectores recurrentes, menos dependientes de Google.']);
+  while(pr.length<3)pr.push(['Sostener la calidad editorial.','Profundizar en los formatos que más retienen para mejorar tiempo de lectura y páginas por sesión.']);
+  document.getElementById('priorities').innerHTML=pr.slice(0,3).map((p,i)=>'<li><span class="num">0'+(i+1)+'</span><span class="ptxt"><strong>'+p[0]+'</strong> '+p[1]+'</span></li>').join('');
+}
+
+function fullMetrics(m){return {sesiones:Math.round(m.sesTot*1000),tendenciaUltimoMes:+m.sesTrend.toFixed(1),desdePico:+m.fromPeak.toFixed(0),discoverCaida:+m.discDrop.toFixed(0),discoverShareGoogle:+m.discShare.toFixed(0),ctr:+m.ctrNow.toFixed(2),ctrDelta:+m.ctrDelta.toFixed(2),clicsCaida:+m.clDrop.toFixed(0),impresionesCaida:+m.impDrop.toFixed(0),tasaRecurrencia:+m.recRate.toFixed(0),pesoMovil:+m.movShare.toFixed(0),paginasPorSesion:+m.ppsW.toFixed(2),tiempoMedioSeg:Math.round(m.timeW)};}
+
+async function pedirIA(){
+  const btn=document.getElementById('iaBtn');const m=metricas();
+  btn.disabled=true;btn.textContent='✦ Analizando…';
+  const payload={key:KEY,periodo:m.per,meses:state.e-state.s,metricas:fullMetrics(m)};
+  try{
+    const res=await fetch(IA_API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    const texto=j.analisis||j.output||j.text||(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content);
+    if(!texto)throw new Error('respuesta vacia');
+    const pars=String(texto).split(/\n\n+/).filter(x=>x.trim());
+    document.getElementById('readingBody').innerHTML=pars.map(p=>'<p>'+p.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</p>').join('');
+    document.getElementById('iaTag').textContent='IA · GPT-4o';
+    document.getElementById('iaTag').className='ia-tag ia';
+    btn.textContent='✦ Regenerar con IA';
+  }catch(err){
+    document.getElementById('readingBody').insertAdjacentHTML('afterbegin','<p class="down" style="font-size:13px">No se pudo generar el análisis con IA ('+err.message+'). Verificá que el workflow de IA esté activo. Mientras tanto, queda el análisis por reglas.</p>');
+    btn.textContent='✦ Reintentar con IA';
+  }finally{btn.disabled=false;}
+}
+
+let chatHistory=[];
+function chatScroll(){const c=document.getElementById('chatMsgs');c.scrollTop=c.scrollHeight;}
+function chatAdd(rol,html){
+  const c=document.getElementById('chatMsgs');
+  const d=document.createElement('div');d.className='chat-msg '+rol;
+  d.innerHTML='<div class="chat-bubble">'+html+'</div>';
+  c.appendChild(d);chatScroll();return d;
+}
+function tablaMensual(){
+  const ms=slice(M);const L=ms.length;
+  function row(i){
+    function v(a){return Math.round((a[i]||0)*1000);}
+    return ms[i]+' | sesiones '+v(DATA.total)+', usuarios '+v(DATA.usuarios)+', pageviews '+v(DATA.pageviews)+
+      ' | canales GA4: directo '+v(DATA.directo)+', organico '+v(DATA.organico)+', social '+v(DATA.social)+', referido '+v(DATA.referido)+', otros '+v(DATA.otros)+
+      ' | Google (Search Console): clics busqueda '+v(DATA.webClics)+', clics Discover '+v(DATA.discover)+', impresiones busqueda '+v(DATA.impresiones)+', CTR '+(slice(DATA.ctr)[i]||0).toFixed(2)+'%'+
+      ' | dispositivos: movil '+v(SEG.movil)+', escritorio '+v(SEG.escritorio)+', tablet '+v(SEG.tablet)+
+      ' | nuevos '+v(SEG.nuevos)+', recurrentes '+v(SEG.recurrentes)+
+      ' | tiempo medio '+Math.round(slice(DATA.avgTime)[i]||0)+'s, paginas/sesion '+(slice(DATA.pps)[i]||0).toFixed(2);
+  }
+  var t='';for(var i=0;i<L;i++){t+=row(i)+'\n';}
+  return t;
+}
+function chatFoco(preg){
+  var h='Estas conversando con el usuario, el Product Manager de Forbes Latinoamerica, sobre los datos de trafico del periodo seleccionado. Responde su ULTIMA pregunta de forma directa, conversacional y breve (1 a 3 parrafos cortos), usando los numeros exactos cuando apliquen. IMPORTANTE: "organico" es un canal de GA4 (visitas sin fuente paga), distinto de "clics de busqueda" de Search Console (clics desde el buscador de Google); no los confundas. Si te piden un dato de un mes y canal puntual, buscalo en la tabla mensual de abajo y dalo exacto. Si algo no esta en los datos, decilo, no inventes.\n\n';
+  h+='DETALLE MES A MES DEL PERIODO (todos los valores en cantidades reales, no en miles):\n'+tablaMensual()+'\n';
+  if(chatHistory.length){h+='Historial de la conversacion hasta ahora:\n';chatHistory.forEach(function(t){h+=(t.rol==='user'?'[Usuario]: ':'[Analista]: ')+t.texto+'\n';});h+='\n';}
+  h+='[Usuario] (nueva pregunta): '+preg;
+  return h;
+}
+async function enviarChat(preg){
+  const inp=document.getElementById('chatInput');
+  if(preg===undefined)preg=inp.value.trim();
+  if(!preg)return;
+  inp.value='';
+  chatAdd('user','<p>'+preg.replace(/</g,'&lt;')+'</p>');
+  const m=metricas();
+  const typing=chatAdd('ia','<p class="chat-typing">escribiendo…</p>');
+  chatHistory.push({rol:'user',texto:preg});
+  const send=document.getElementById('chatSend');send.disabled=true;
+  const payload={key:KEY,periodo:m.per,meses:state.e-state.s,modo:'foco',foco:chatFoco(preg),metricas:fullMetrics(m)};
+  try{
+    const res=await fetch(IA_API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    const texto=j.analisis||j.output||j.text;
+    if(!texto)throw new Error('respuesta vacia');
+    typing.remove();
+    const html=String(texto).split(/\n\n+/).filter(x=>x.trim()).map(p=>'<p>'+p.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</p>').join('');
+    chatAdd('ia',html);
+    chatHistory.push({rol:'ia',texto:String(texto)});
+  }catch(err){
+    typing.remove();
+    chatAdd('ia','<p class="down" style="font-size:12.5px">No pude responder ('+err.message+'). ¿El workflow de IA está activo y con la credencial de OpenAI asignada?</p>');
+  }finally{send.disabled=false;}
+}
+function toggleChat(open){
+  const dock=document.getElementById('chatDock');const fab=document.getElementById('chatFab');
+  dock.classList.toggle('open',open);
+  fab.classList.toggle('hidden',open);
+  if(open){setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus();chatScroll();},60);}
+}
+function initChat(){
+  const chips=['¿Qué es lo más urgente ahora?','¿Por qué cae Discover?','¿Cómo recupero recurrencia?','¿Esto es ranking o IA?'];
+  const cc=document.getElementById('chatChips');
+  cc.innerHTML=chips.map(function(q){return '<button class="chat-chip">'+q+'</button>';}).join('');
+  cc.querySelectorAll('.chat-chip').forEach(function(b){b.onclick=function(){enviarChat(b.textContent);};});
+  document.getElementById('chatSend').onclick=function(){enviarChat();};
+  document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();enviarChat();}});
+  if(!chatHistory.length)chatAdd('ia','<p>Hola. Soy el analista de tráfico. Preguntame lo que quieras sobre el período que tengas seleccionado arriba — por qué cae el tráfico, qué priorizar, qué significa una métrica. Recuerdo el hilo de la charla.</p>');
+  document.getElementById('chatFab').classList.remove('hidden');
+}
+
+const PANELS={
+  main:{foco:'El grafico de trafico por canal (directo, organico, social, referido, otros) y su evolucion mensual. Cual canal sostiene el trafico, cual preocupa, y si la caida del directo sugiere un problema de medicion.',
+    pick:m=>({sesiones:Math.round(m.sesTot*1000),tendenciaUltimoMes:+m.sesTrend.toFixed(1),desdePico:+m.fromPeak.toFixed(0),directoCaida:+m.dirDrop.toFixed(0)})},
+  disc:{foco:'La comparacion entre Discover y la busqueda web como fuentes de clics de Google. Por que Discover es la fuente mas grande pero la mas volatil y que tan dependiente es Forbes de ese unico feed.',
+    pick:m=>({discoverCaida:+m.discDrop.toFixed(0),discoverShareGoogle:+m.discShare.toFixed(0),clicsCaida:+m.clDrop.toFixed(0)})},
+  ctr:{foco:'Si el problema es perdida de ranking o la IA de Google quedandose con el clic, comparando la variacion de impresiones contra la de clics y el CTR de busqueda.',
+    pick:m=>({ctr:+m.ctrNow.toFixed(2),ctrDelta:+m.ctrDelta.toFixed(2),clicsCaida:+m.clDrop.toFixed(0),impresionesCaida:+m.impDrop.toFixed(0)})},
+  beh:{foco:'La calidad de la sesion: tiempo medio de lectura y paginas por sesion. Si el comportamiento sugiere lectura real o trafico de paso que entra a una sola nota y se va.',
+    pick:m=>({tiempoMedioSeg:Math.round(m.timeW),paginasPorSesion:+m.ppsW.toFixed(2)})},
+  dev:{foco:'El peso del movil en el trafico total y que implica para las prioridades de producto de un medio mobile-first (velocidad de carga, formato Discover).',
+    pick:m=>({pesoMovil:+m.movShare.toFixed(0)})},
+  aud:{foco:'La proporcion de usuarios nuevos vs recurrentes y por que una baja recurrencia es la mayor vulnerabilidad estructural de Forbes frente a los cambios de algoritmo de Google.',
+    pick:m=>({tasaRecurrencia:+m.recRate.toFixed(0),nuevosShare:+m.nuevosShare.toFixed(0)})}
+};
+
+function injectPanelButtons(){
+  document.querySelectorAll('[data-iapanel]').forEach(p=>{
+    const key=p.getAttribute('data-iapanel');
+    const head=p.querySelector('.panel-head');
+    if(head&&!head.querySelector('.ia-mini')){
+      const b=document.createElement('button');
+      b.className='ia-mini';b.textContent='✦ Preguntar a la IA';
+      b.onclick=()=>askPanelIA(key,b);
+      head.appendChild(b);
+    }
+    const ins=p.querySelector('.insight');
+    if(ins&&!p.querySelector('.ia-panel-out')){
+      const d=document.createElement('div');d.className='ia-panel-out';d.id='iaOut-'+key;
+      ins.parentNode.insertBefore(d,ins.nextSibling);
+    }
+  });
+}
+
+async function askPanelIA(key,btn){
+  const cfg=PANELS[key];if(!cfg)return;
+  const m=metricas();const out=document.getElementById('iaOut-'+key);
+  const old=btn.textContent;btn.disabled=true;btn.textContent='✦ Pensando…';
+  out.innerHTML='<div class="ia-loading">Analizando este gráfico…</div>';
+  const payload={key:KEY,periodo:m.per,meses:state.e-state.s,foco:cfg.foco,metricas:cfg.pick(m)};
+  try{
+    const res=await fetch(IA_API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    const texto=j.analisis||j.output||j.text;
+    if(!texto)throw new Error('respuesta vacia');
+    const pars=String(texto).split(/\n\n+/).filter(x=>x.trim());
+    out.innerHTML=pars.map(p=>'<p>'+p.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</p>').join('');
+    btn.textContent='✦ Volver a preguntar';
+  }catch(err){
+    out.innerHTML='<p class="down" style="font-size:12.5px">No se pudo generar ('+err.message+'). ¿El workflow de IA está activo y con la credencial de OpenAI asignada?</p>';
+    btn.textContent=old;
+  }finally{btn.disabled=false;}
+}
+
+function renderAll(){renderHistoria();renderKpis();buildMain();buildDisc();buildCtr();buildBeh();buildDev();buildAud();renderTop();renderInsights();renderReadingReglas();}
+
+function setRange(s,e,fromQuick){
+  state.s=s;state.e=e;
+  document.getElementById('from').value=s;document.getElementById('to').value=e-1;
+  document.querySelectorAll('.rng').forEach(b=>{const q=QUICK[b.dataset.range];b.classList.toggle('active',!!(fromQuick&&q&&q[0]===s&&q[1]===e));});
+  renderAll();
+  document.querySelectorAll('.ia-panel-out').forEach(d=>{d.innerHTML='';});
+  document.querySelectorAll('.ia-mini').forEach(b=>{b.textContent='✦ Preguntar a la IA';b.disabled=false;});
+  var ib=document.getElementById('iaBtn');if(ib){ib.textContent='✦ Profundizar con IA';ib.disabled=false;}
+}
+function initControls(){
+  const from=document.getElementById('from'),to=document.getElementById('to');
+  from.innerHTML='';to.innerHTML='';
+  M.forEach((mm,i)=>{from.add(new Option(mm,i));to.add(new Option(mm,i));});
+  from.value=state.s;to.value=state.e-1;
+  document.querySelectorAll('.rng').forEach(b=>{b.onclick=()=>{const q=QUICK[b.dataset.range];if(q)setRange(q[0],q[1],true);};});
+  const oc=()=>{let s=+from.value,e=+to.value;if(s>e){e=s;to.value=e;}setRange(s,e+1,false);};
+  from.onchange=oc;to.onchange=oc;
+  document.querySelectorAll('.tg').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.tg').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.view=b.dataset.view;buildMain();};});
+}
+
+async function cargar(){
+  const status=document.getElementById('statusBar');
+  try{
+    const res=await fetch(API+'?from=200001&to=999999&key='+encodeURIComponent(KEY));
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const json=await res.json();
+    if(!json.ok||!json.data||!json.data.length)throw new Error('respuesta vacia');
+    buildArrays(json.data,json.segmentos,json.topNotas);
+    if(M.length===0)throw new Error('sin meses con datos');
+    await (document.fonts?document.fonts.ready:Promise.resolve());
+    initControls();
+    setRange(QUICK.all[0],QUICK.all[1],true);
+    status.style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    injectPanelButtons();
+    initChat();
+    const u=json.data[json.data.length-1];
+    if(u&&u.actualizado)document.getElementById('footNote').textContent='Forbes Latinoamérica · Inteligencia de Tráfico · GA4 + Search Console · actualizado '+new Date(u.actualizado).toLocaleString('es');
+  }catch(err){
+    status.classList.add('err');
+    status.innerHTML='No se pudieron cargar los datos ('+err.message+'). Verificá que el workflow de n8n esté activo y la clave sea correcta.';
+  }
+}
+cargar();
+</script>
+</body>
+</html>
