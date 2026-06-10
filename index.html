@@ -214,7 +214,7 @@
     <div class="section-lab label">Análisis</div>
     <section class="panel" data-iapanel="main">
       <div class="panel-head">
-        <div><h2>Tráfico por canal</h2><div class="p-sub">Sesiones mensuales por canal de GA4. Las líneas rojas marcan actualizaciones de algoritmo de Google.</div></div>
+        <div><h2>Tráfico por canal — ¿qué canal cayó?</h2><div class="p-sub">Sesiones por canal de GA4 (directo, orgánico, social, referido). Para aislar una caída, acotá el período (por ejemplo feb–mar 2026). Las líneas rojas marcan actualizaciones de algoritmo de Google.</div></div>
         <div class="panel-tag label" style="font-size:10px">Sesiones (miles)</div>
       </div>
       <div class="toggle-row">
@@ -232,7 +232,7 @@
         <div class="insight" id="insDisc"></div>
       </div>
       <div class="panel" data-iapanel="ctr">
-        <div class="panel-head"><div><h2>¿Ranking o IA?</h2><div class="p-sub">Impresiones vs clics: si las impresiones aguantan y los clics caen, la IA se queda con el clic.</div></div></div>
+        <div class="panel-head"><div><h2>Impacto de la IA (SGE) en el CTR</h2><div class="p-sub">Si las impresiones se sostienen pero los clics caen, las respuestas con IA de Google se quedan con el clic. Mide el efecto de SGE sobre el CTR orgánico.</div></div></div>
         <div class="chart-sm"><canvas id="ctrChart"></canvas></div>
         <div class="insight" id="insCtr"></div>
       </div>
@@ -258,8 +258,14 @@
     </section>
 
     <section class="panel">
-      <div class="panel-head"><div><h2>Notas con más tráfico</h2><div class="p-sub">Top de páginas por vistas, últimos 90 días (GA4).</div></div><div class="panel-tag label" style="font-size:10px">Últimos 90 días</div></div>
+      <div class="panel-head"><div><h2>Notas con más tráfico</h2><div class="p-sub">Top de páginas por vistas totales, últimos 90 días (GA4).</div></div><div class="panel-tag label" style="font-size:10px">Últimos 90 días</div></div>
       <div id="topNotasBox" style="margin-top:14px"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Notas que más traen desde Discover</h2><div class="p-sub">Las páginas con más clics desde el feed de Discover (Search Console), sumadas en el período seleccionado. Responde qué contenido funciona en Discover y cuál dejó de circular.</div></div><div class="panel-tag label" style="font-size:10px">Clics de Discover</div></div>
+      <div id="discoverNotasBox" style="margin-top:14px"></div>
+      <div class="insight" id="insDiscNotas"></div>
     </section>
 
     <section class="reading">
@@ -315,7 +321,7 @@ Chart.defaults.font.family="'Barlow', sans-serif";Chart.defaults.color=C.label;
 
 function ymLabel(ym){var s=String(ym);return MESES[parseInt(s.slice(4,6),10)-1]+' '+s.slice(2,4);}
 
-let DATA={},SEG={},TOP=[],M=[],YM=[];
+let DATA={},SEG={},TOP=[],DISCNOTAS=[],M=[],YM=[];
 let state={s:0,e:0,view:'canal'};
 const QUICK={};
 
@@ -345,6 +351,7 @@ function buildArrays(rows,segmentos,topNotas){
   const sv=f=>YM.map(y=>{const s=segMap[y];return s?Number(s[f])/1000:0;});
   SEG={movil:sv('movil'),escritorio:sv('escritorio'),tablet:sv('tablet'),nuevos:sv('nuevos'),recurrentes:sv('recurrentes')};
   TOP=(topNotas||[]).slice();
+  DISCNOTAS=(arguments[3]||[]).slice();
   const n=M.length;
   QUICK.all=[0,n];QUICK['6m']=[Math.max(0,n-6),n];QUICK['3m']=[Math.max(0,n-3),n];
   let i=YM.findIndex(y=>y.slice(0,4)==='2026');QUICK['2026']=[i>=0?i:0,n];
@@ -401,15 +408,61 @@ function buildAud(){const labels=slice(M);mk('audChart',{type:'bar',data:{labels
   {label:'Recurrentes',data:slice(SEG.recurrentes),backgroundColor:C.red}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend,tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.round(c.parsed.y)+' k'}}},scales:baseAxes(true)}});}
 
+var TOP_SECCIONES=['ultimas-noticias','forbes-life','forbeslife','forbes-staff','red-forbes','economia-y-finanzas','economia','negocios','liderazgo','tecnologia','mundo','deportes','forbes-women','sustentabilidad','politica','lifestyle','estilo-de-vida','autos','editors-picks','forbes-360','forbes-explica','noticias','forbes-money','dinero','opinion','videos','podcasts'];
+var TOP_TITULOS_GENERICOS=['forbes mexico','forbes méxico','ultimas noticias','últimas noticias','inicio','home','noticias','pagina de inicio','página de inicio'];
+function limpiarTitulo(t){return String(t||'').replace(/\s*[•|\-]\s*Forbes M[eé]xico\s*$/i,'').trim();}
+function esNotaReal(n){
+  var seg=String(n.path||'').replace(/^\/+|\/+$/g,'').toLowerCase();
+  if(seg==='')return false;
+  if(TOP_SECCIONES.indexOf(seg)>=0)return false;
+  var tl=limpiarTitulo(n.titulo).toLowerCase();
+  if(TOP_TITULOS_GENERICOS.indexOf(tl)>=0)return false;
+  return true;
+}
 function renderTop(){
   const box=document.getElementById('topNotasBox');
-  if(!TOP.length){box.innerHTML='<div class="nota-meta" style="text-align:left">Sin datos de notas en este período.</div>';return;}
-  box.innerHTML=TOP.slice(0,15).map((n,i)=>{
+  const notas=TOP.filter(esNotaReal);
+  if(!notas.length){box.innerHTML='<div class="nota-meta" style="text-align:left">Sin datos de notas en este período.</div>';return;}
+  box.innerHTML=notas.slice(0,15).map((n,i)=>{
     const pv=Number(n.pageviews)||0,t=Number(n.tiempoMedioSeg)||0;
-    var tit=String(n.titulo||n.path||'').replace(/ • Forbes México$/,'');
+    var tit=limpiarTitulo(n.titulo||n.path);
     const url='https://www.forbes.com.mx'+(n.path||'');
     return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a></span><span class="nota-pv">'+fmt(pv/1000)+'</span><span class="nota-meta">'+fmtT(t)+' · '+(Number(n.sesiones)||0).toLocaleString('es')+' ses.</span></div>';
   }).join('');
+}
+
+function tituloDesdePath(path){
+  var seg=String(path||'').replace(/^\/+|\/+$/g,'').split('/').pop().replace(/\.html?$/,'');
+  if(!seg)return 'Portada';
+  seg=seg.replace(/[-_]+/g,' ').trim();
+  return seg.charAt(0).toUpperCase()+seg.slice(1);
+}
+function renderDiscoverNotas(){
+  const box=document.getElementById('discoverNotasBox');
+  const ins=document.getElementById('insDiscNotas');
+  if(!DISCNOTAS.length){box.innerHTML='<div class="nota-meta" style="text-align:left">Todavía no hay datos de Discover por nota. Se llenan cuando el workflow nuevo corra por primera vez.</div>';if(ins)ins.innerHTML='';return;}
+  var titulos={};TOP.forEach(function(n){if(n.path)titulos[String(n.path).replace(/\/+$/,'')]=limpiarTitulo(n.titulo);});
+  var desde=YM[state.s],hasta=YM[state.e-1];
+  var acc={};
+  DISCNOTAS.forEach(function(d){
+    var ym=String(d.yearMonth);
+    if(ym<desde||ym>hasta)return;
+    if(!esNotaReal(d))return;
+    var p=String(d.path||'').replace(/\/+$/,'');
+    if(!acc[p])acc[p]={path:d.path,clics:0,impresiones:0};
+    acc[p].clics+=Number(d.clics)||0;
+    acc[p].impresiones+=Number(d.impresiones)||0;
+  });
+  var lista=Object.keys(acc).map(function(k){return acc[k];}).sort(function(a,b){return b.clics-a.clics;}).slice(0,15);
+  if(!lista.length){box.innerHTML='<div class="nota-meta" style="text-align:left">Sin notas de Discover en este período.</div>';if(ins)ins.innerHTML='';return;}
+  var totalClics=0;lista.forEach(function(o){totalClics+=o.clics;});
+  box.innerHTML=lista.map(function(o,i){
+    var p=String(o.path||'').replace(/\/+$/,'');
+    var tit=titulos[p]||tituloDesdePath(o.path);
+    var url='https://www.forbes.com.mx'+(o.path||'');
+    return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a></span><span class="nota-pv">'+fmt(o.clics/1000)+'</span><span class="nota-meta">'+(o.impresiones).toLocaleString('es')+' impr.</span></div>';
+  }).join('');
+  if(ins)ins.innerHTML='Las <strong>'+lista.length+'</strong> notas top de Discover suman <strong>'+fmt(totalClics/1000)+'</strong> clics en el período. Si una nota concentra mucho y luego desaparece, ahí está el pulso de qué dejó de circular en el feed.';
 }
 
 function metricas(){
@@ -715,7 +768,7 @@ async function askPanelIA(key,btn){
   }finally{btn.disabled=false;}
 }
 
-function renderAll(){renderHistoria();renderKpis();buildMain();buildDisc();buildCtr();buildBeh();buildDev();buildAud();renderTop();renderInsights();renderReadingReglas();}
+function renderAll(){renderHistoria();renderKpis();buildMain();buildDisc();buildCtr();buildBeh();buildDev();buildAud();renderTop();renderDiscoverNotas();renderInsights();renderReadingReglas();}
 
 function setRange(s,e,fromQuick){
   state.s=s;state.e=e;
@@ -744,7 +797,7 @@ async function cargar(){
     if(!res.ok)throw new Error('HTTP '+res.status);
     const json=await res.json();
     if(!json.ok||!json.data||!json.data.length)throw new Error('respuesta vacia');
-    buildArrays(json.data,json.segmentos,json.topNotas);
+    buildArrays(json.data,json.segmentos,json.topNotas,json.discoverNotas);
     if(M.length===0)throw new Error('sin meses con datos');
     await (document.fonts?document.fonts.ready:Promise.resolve());
     initControls();
