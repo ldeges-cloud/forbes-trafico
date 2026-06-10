@@ -79,6 +79,7 @@
   .nota-tit a{text-decoration:none}.nota-tit a:hover{color:var(--red)}
   .nota-pv{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;color:var(--muted);min-width:64px;text-align:right}
   .nota-meta{color:var(--label);font-size:11px;min-width:120px;text-align:right}
+  .nota-badge{display:inline-block;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:9px;font-weight:600;color:#e0b35a;border:1px solid #5a4620;border-radius:3px;padding:1px 5px;margin-left:8px;vertical-align:middle}
   @media(max-width:700px){.nota-meta{display:none}}
 
   .reading{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--red);border-radius:6px;padding:24px 28px;margin-bottom:20px}
@@ -263,7 +264,7 @@
     </section>
 
     <section class="panel">
-      <div class="panel-head"><div><h2>Notas que más traen desde Discover</h2><div class="p-sub">Las páginas con más clics desde el feed de Discover (Search Console), sumadas en el período seleccionado. Responde qué contenido funciona en Discover y cuál dejó de circular.</div></div><div class="panel-tag label" style="font-size:10px">Clics de Discover</div></div>
+      <div class="panel-head"><div><h2>Notas que más traen desde Discover</h2><div class="p-sub">Las páginas con más clics desde el feed de Discover (Search Console), sumadas en el período seleccionado. Las marcadas como <span style="color:#e0b35a">Branded</span> son contenido patrocinado, no editorial.</div></div><div class="panel-tag label" style="font-size:10px">Clics de Discover</div></div>
       <div id="discoverNotasBox" style="margin-top:14px"></div>
       <div class="insight" id="insDiscNotas"></div>
     </section>
@@ -411,6 +412,8 @@ function buildAud(){const labels=slice(M);mk('audChart',{type:'bar',data:{labels
 var TOP_SECCIONES=['ultimas-noticias','forbes-life','forbeslife','forbes-staff','red-forbes','economia-y-finanzas','economia','negocios','liderazgo','tecnologia','mundo','deportes','forbes-women','sustentabilidad','politica','lifestyle','estilo-de-vida','autos','editors-picks','forbes-360','forbes-explica','noticias','forbes-money','dinero','opinion','videos','podcasts'];
 var TOP_TITULOS_GENERICOS=['forbes mexico','forbes méxico','ultimas noticias','últimas noticias','inicio','home','noticias','pagina de inicio','página de inicio'];
 function limpiarTitulo(t){return String(t||'').replace(/\s*[•|\-]\s*Forbes M[eé]xico\s*$/i,'').trim();}
+function esBranded(path){var seg=String(path||'').replace(/^\/+/,'').toLowerCase();return seg.indexOf('ad-')===0;}
+function badge(path){return esBranded(path)?'<span class="nota-badge">Branded</span>':'';}
 function esNotaReal(n){
   var seg=String(n.path||'').replace(/^\/+|\/+$/g,'').toLowerCase();
   if(seg==='')return false;
@@ -427,7 +430,7 @@ function renderTop(){
     const pv=Number(n.pageviews)||0,t=Number(n.tiempoMedioSeg)||0;
     var tit=limpiarTitulo(n.titulo||n.path);
     const url='https://www.forbes.com.mx'+(n.path||'');
-    return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a></span><span class="nota-pv">'+fmt(pv/1000)+'</span><span class="nota-meta">'+fmtT(t)+' · '+(Number(n.sesiones)||0).toLocaleString('es')+' ses.</span></div>';
+    return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a>'+badge(n.path)+'</span><span class="nota-pv">'+fmt(pv/1000)+'</span><span class="nota-meta">'+fmtT(t)+' · '+(Number(n.sesiones)||0).toLocaleString('es')+' ses.</span></div>';
   }).join('');
 }
 
@@ -460,7 +463,7 @@ function renderDiscoverNotas(){
     var p=String(o.path||'').replace(/\/+$/,'');
     var tit=titulos[p]||tituloDesdePath(o.path);
     var url='https://www.forbes.com.mx'+(o.path||'');
-    return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a></span><span class="nota-pv">'+fmt(o.clics/1000)+'</span><span class="nota-meta">'+(o.impresiones).toLocaleString('es')+' impr.</span></div>';
+    return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a>'+badge(o.path)+'</span><span class="nota-pv">'+fmt(o.clics/1000)+'</span><span class="nota-meta">'+(o.impresiones).toLocaleString('es')+' impr.</span></div>';
   }).join('');
   if(ins)ins.innerHTML='Las <strong>'+lista.length+'</strong> notas top de Discover suman <strong>'+fmt(totalClics/1000)+'</strong> clics en el período. Si una nota concentra mucho y luego desaparece, ahí está el pulso de qué dejó de circular en el feed.';
 }
