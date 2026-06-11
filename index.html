@@ -259,6 +259,12 @@
     </section>
 
     <section class="panel">
+      <div class="panel-head"><div><h2>¿De dónde vuelven los recurrentes?</h2><div class="p-sub">Sesiones por canal de adquisición, separadas entre usuarios nuevos y recurrentes (GA4). Responde por dónde regresan los lectores fieles, para enfocar ahí el esfuerzo de retención.</div></div><div class="panel-tag label" style="font-size:10px">Sesiones (miles)</div></div>
+      <div class="chart-sm" style="height:300px"><canvas id="recurCanalChart"></canvas></div>
+      <div class="insight" id="insRecurCanal"></div>
+    </section>
+
+    <section class="panel">
       <div class="panel-head"><div><h2>Notas con más tráfico</h2><div class="p-sub">Top de páginas por vistas totales, últimos 90 días (GA4).</div></div><div class="panel-tag label" style="font-size:10px">Últimos 90 días</div></div>
       <div id="topNotasBox" style="margin-top:14px"></div>
     </section>
@@ -322,7 +328,7 @@ Chart.defaults.font.family="'Barlow', sans-serif";Chart.defaults.color=C.label;
 
 function ymLabel(ym){var s=String(ym);return MESES[parseInt(s.slice(4,6),10)-1]+' '+s.slice(2,4);}
 
-let DATA={},SEG={},TOP=[],DISCNOTAS=[],M=[],YM=[];
+let DATA={},SEG={},TOP=[],DISCNOTAS=[],RECURCANAL=[],M=[],YM=[];
 let state={s:0,e:0,view:'canal'};
 const QUICK={};
 
@@ -353,6 +359,7 @@ function buildArrays(rows,segmentos,topNotas){
   SEG={movil:sv('movil'),escritorio:sv('escritorio'),tablet:sv('tablet'),nuevos:sv('nuevos'),recurrentes:sv('recurrentes')};
   TOP=(topNotas||[]).slice();
   DISCNOTAS=(arguments[3]||[]).slice();
+  RECURCANAL=(arguments[4]||[]).slice();
   const n=M.length;
   QUICK.all=[0,n];QUICK['6m']=[Math.max(0,n-6),n];QUICK['3m']=[Math.max(0,n-3),n];
   let i=YM.findIndex(y=>y.slice(0,4)==='2026');QUICK['2026']=[i>=0?i:0,n];
@@ -432,6 +439,35 @@ function renderTop(){
     const url='https://www.forbes.com.mx'+(n.path||'');
     return '<div class="nota-row"><span class="nota-rank">'+(i+1)+'</span><span class="nota-tit"><a href="'+url+'" target="_blank" rel="noopener">'+tit+'</a>'+badge(n.path)+'</span><span class="nota-pv">'+fmt(pv/1000)+'</span><span class="nota-meta">'+fmtT(t)+' · '+(Number(n.sesiones)||0).toLocaleString('es')+' ses.</span></div>';
   }).join('');
+}
+
+const CANALES_ORD=['Directo','Busqueda','Social','Referido','Otros'];
+function buildRecurCanal(){
+  const ins=document.getElementById('insRecurCanal');
+  if(!RECURCANAL.length){if(charts.recurCanalChart){charts.recurCanalChart.destroy();delete charts.recurCanalChart;}if(ins)ins.innerHTML='Aún no hay datos de recurrencia por canal. Se llenan cuando el workflow nuevo (1C) corra por primera vez.';return;}
+  var desde=YM[state.s],hasta=YM[state.e-1];
+  var r={nuevo:{},recurrente:{}};
+  CANALES_ORD.forEach(function(c){r.nuevo[c]=0;r.recurrente[c]=0;});
+  RECURCANAL.forEach(function(d){
+    var ym=String(d.yearMonth);if(ym<desde||ym>hasta)return;
+    var tipo=d.tipo;if(tipo!=='nuevo'&&tipo!=='recurrente')return;
+    var c=CANALES_ORD.indexOf(d.canal)>=0?d.canal:'Otros';
+    r[tipo][c]+=Number(d.sesiones)||0;
+  });
+  var etiquetas=CANALES_ORD.map(function(c){return c==='Busqueda'?'Búsqueda':c;});
+  var nuevos=CANALES_ORD.map(function(c){return +(r.nuevo[c]/1000).toFixed(1);});
+  var recs=CANALES_ORD.map(function(c){return +(r.recurrente[c]/1000).toFixed(1);});
+  mk('recurCanalChart',{type:'bar',data:{labels:etiquetas,datasets:[
+    {label:'Nuevos',data:nuevos,backgroundColor:C.gris2},
+    {label:'Recurrentes',data:recs,backgroundColor:C.red}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend,tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.round(c.parsed.y)+' k'}}},scales:baseAxes(false)}});
+  if(ins){
+    var totalRec=0,topC='',topV=-1;CANALES_ORD.forEach(function(c){totalRec+=r.recurrente[c];if(r.recurrente[c]>topV){topV=r.recurrente[c];topC=c;}});
+    var totalNue=0,topCN='',topVN=-1;CANALES_ORD.forEach(function(c){totalNue+=r.nuevo[c];if(r.nuevo[c]>topVN){topVN=r.nuevo[c];topCN=c;}});
+    var sRec=totalRec?Math.round(topV/totalRec*100):0,sNue=totalNue?Math.round(topVN/totalNue*100):0;
+    var et=function(c){return c==='Busqueda'?'búsqueda':c.toLowerCase();};
+    ins.innerHTML='Los <strong>recurrentes</strong> llegan sobre todo por <strong>'+et(topC)+'</strong> ('+sRec+'% de sus sesiones), mientras que los nuevos entran principalmente por '+et(topCN)+' ('+sNue+'%). Ahí conviene concentrar el esfuerzo editorial para retenerlos.';
+  }
 }
 
 function tituloDesdePath(path){
@@ -771,7 +807,7 @@ async function askPanelIA(key,btn){
   }finally{btn.disabled=false;}
 }
 
-function renderAll(){renderHistoria();renderKpis();buildMain();buildDisc();buildCtr();buildBeh();buildDev();buildAud();renderTop();renderDiscoverNotas();renderInsights();renderReadingReglas();}
+function renderAll(){renderHistoria();renderKpis();buildMain();buildDisc();buildCtr();buildBeh();buildDev();buildAud();buildRecurCanal();renderTop();renderDiscoverNotas();renderInsights();renderReadingReglas();}
 
 function setRange(s,e,fromQuick){
   state.s=s;state.e=e;
@@ -800,7 +836,7 @@ async function cargar(){
     if(!res.ok)throw new Error('HTTP '+res.status);
     const json=await res.json();
     if(!json.ok||!json.data||!json.data.length)throw new Error('respuesta vacia');
-    buildArrays(json.data,json.segmentos,json.topNotas,json.discoverNotas);
+    buildArrays(json.data,json.segmentos,json.topNotas,json.discoverNotas,json.recurrenciaCanal);
     if(M.length===0)throw new Error('sin meses con datos');
     await (document.fonts?document.fonts.ready:Promise.resolve());
     initControls();
