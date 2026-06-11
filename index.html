@@ -258,7 +258,7 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-iapanel="recur">
       <div class="panel-head"><div><h2>¿De dónde vuelven los recurrentes?</h2><div class="p-sub">Sesiones por canal de adquisición, separadas entre usuarios nuevos y recurrentes (GA4). Responde por dónde regresan los lectores fieles, para enfocar ahí el esfuerzo de retención.</div></div><div class="panel-tag label" style="font-size:10px">Sesiones (miles)</div></div>
       <div class="chart-sm" style="height:300px"><canvas id="recurCanalChart"></canvas></div>
       <div class="insight" id="insRecurCanal"></div>
@@ -468,6 +468,22 @@ function buildRecurCanal(){
     var et=function(c){return c==='Busqueda'?'búsqueda':c.toLowerCase();};
     ins.innerHTML='Los <strong>recurrentes</strong> llegan sobre todo por <strong>'+et(topC)+'</strong> ('+sRec+'% de sus sesiones), mientras que los nuevos entran principalmente por '+et(topCN)+' ('+sNue+'%). Ahí conviene concentrar el esfuerzo editorial para retenerlos.';
   }
+}
+
+function resumenRecurCanal(){
+  var desde=YM[state.s],hasta=YM[state.e-1];
+  var r={nuevo:{},recurrente:{}};
+  CANALES_ORD.forEach(function(c){r.nuevo[c]=0;r.recurrente[c]=0;});
+  RECURCANAL.forEach(function(d){
+    var ym=String(d.yearMonth);if(ym<desde||ym>hasta)return;
+    var tipo=d.tipo;if(tipo!=='nuevo'&&tipo!=='recurrente')return;
+    var c=CANALES_ORD.indexOf(d.canal)>=0?d.canal:'Otros';
+    r[tipo][c]+=Number(d.sesiones)||0;
+  });
+  function pct(o){var t=0;CANALES_ORD.forEach(function(c){t+=o[c];});var s={};CANALES_ORD.forEach(function(c){s[c]=t?Math.round(o[c]/t*100):0;});return s;}
+  var pn=pct(r.nuevo),pr=pct(r.recurrente);
+  return {recurrentesPorcentajes:'Directo '+pr.Directo+'%, Busqueda '+pr.Busqueda+'%, Social '+pr.Social+'%, Referido '+pr.Referido+'%, Otros '+pr.Otros+'%',
+          nuevosPorcentajes:'Directo '+pn.Directo+'%, Busqueda '+pn.Busqueda+'%, Social '+pn.Social+'%, Referido '+pn.Referido+'%, Otros '+pn.Otros+'%'};
 }
 
 function tituloDesdePath(path){
@@ -765,7 +781,9 @@ const PANELS={
   dev:{foco:'El peso del movil en el trafico total y que implica para las prioridades de producto de un medio mobile-first (velocidad de carga, formato Discover).',
     pick:m=>({pesoMovil:+m.movShare.toFixed(0)})},
   aud:{foco:'La proporcion de usuarios nuevos vs recurrentes y por que una baja recurrencia es la mayor vulnerabilidad estructural de Forbes frente a los cambios de algoritmo de Google.',
-    pick:m=>({tasaRecurrencia:+m.recRate.toFixed(0),nuevosShare:+m.nuevosShare.toFixed(0)})}
+    pick:m=>({tasaRecurrencia:+m.recRate.toFixed(0),nuevosShare:+m.nuevosShare.toFixed(0)})},
+  recur:{foco:'De donde vuelven los lectores recurrentes segun el canal de adquisicion (directo, busqueda, social, referido), comparado con los nuevos, y que implica para decidir donde concentrar el esfuerzo editorial de retencion. Usa los porcentajes por canal que se entregan.',
+    pick:m=>{var r=resumenRecurCanal();return{tasaRecurrencia:+m.recRate.toFixed(0),recurrentesPorCanal:r.recurrentesPorcentajes,nuevosPorCanal:r.nuevosPorcentajes};}}
 };
 
 function injectPanelButtons(){
